@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JpaBuddyIdeaProjectConfig" ddlActionDbType="mysql" migrateIndexesAndConstraints="false">
+    <option name="defaultUnitInitialized" value="true" />
+    <option name="reverseEngineeringLastDbConnectionId" value="6f327b4e-ac3c-4c8e-9fe8-42ce309b6956" />
+    <option name="reLastEntityCreationPackage" value="src/main/java/com/data/employees" />
+  </component>
+</project>
