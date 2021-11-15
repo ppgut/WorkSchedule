@@ -1,23 +1,18 @@
 package com.data;
 
-import com.data.date.Day;
-import com.data.employees.Employee;
-import com.data.schedule.ScheduleLine;
 import com.google.common.base.Preconditions;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
-import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
+import org.hibernate.*;
 import org.hibernate.query.Query;
 
 import javax.persistence.criteria.CriteriaBuilder;
 import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.util.List;
 import java.util.Map;
 
 public abstract class DAO<T> {
-    private SessionFactory factory;
+    private static SessionFactory factory;
     private Session session;
     private Transaction tx;
     private Class<T> clazz;
@@ -33,7 +28,7 @@ public abstract class DAO<T> {
     public T findOne(final long id) {
         T ent;
         try {
-            session = factory.getCurrentSession();
+            session = factory.openSession();
             tx = session.beginTransaction();
             ent = session.get(clazz, id);
             tx.commit();
@@ -41,30 +36,33 @@ public abstract class DAO<T> {
         } catch (HibernateException e) {
             if (tx!=null) tx.rollback();
             e.printStackTrace();
+        } finally {
+            session.close();
         }
         return null;
     }
 
-    public Integer findId(T entity, Map<String, Object> parameters) {
+    /*
+    To override in each entity DAO class using parameters typical for given entity,
+    e.g. Employee -> firstName, lastName.
+    FindByProperties() shall be used with parameter-value pairs mapped to 'propertiesToCompare' map.
+    Based on these parameters predicates array is created to be used in criteria query.
+    */
+    public abstract Integer findId(T entity);
+
+    public Integer findIdByProperties(T entity, Map<String, Object> propertiesToCompare) {
         List<T> results;
         Integer id = null;
         try {
-            session = factory.getCurrentSession();
+            session = factory.openSession();
             tx = session.beginTransaction();
             CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<T> cr = cb.createQuery(clazz);
             Root<T> root = cr.from(clazz);
-            cr.select(root);
-            if (clazz == Employee.class)
-                cr.where(
-                        cb.equal(root.get("firstName"), ((Employee) entity).getFirstName()),
-                        cb.equal(root.get("lastName"), ((Employee) entity).getLastName()));
-            else if (clazz == Day.class)
-                cr.where(cb.equal(root.get("fulldate"), ((Day) entity).getFulldate()));
-            else if (clazz == ScheduleLine.class)
-                cr.where(
-                        cb.equal(root.get("day"), ((ScheduleLine) entity).getDay()),
-                        cb.equal(root.get("employee"), ((ScheduleLine) entity).getEmployee()));
+            Predicate[] predicates = propertiesToCompare.entrySet().stream()
+                    .map(e -> cb.equal(root.get(e.getKey()), e.getValue()))
+                    .toArray(Predicate[]::new);
+            cr.select(root).where(predicates);
             Query<T> query = session.createQuery(cr);
             results = query.getResultList();
             tx.commit();
@@ -73,8 +71,9 @@ public abstract class DAO<T> {
             if (tx!=null) tx.rollback();
             e.printStackTrace();
         } catch (IndexOutOfBoundsException e) {
-            System.out.println("findId - IndexOutOfBoundException");
             return null;
+        } finally {
+            session.close();
         }
         return id;
     }
@@ -82,6 +81,8 @@ public abstract class DAO<T> {
     public List<T> findAll() {
         List<T> results;
         try {
+            session = factory.openSession();
+            tx = session.beginTransaction();
             CriteriaBuilder cb = session.getCriteriaBuilder();
             CriteriaQuery<T> cr = cb.createQuery(clazz);
             Root<T> root = cr.from(clazz);
@@ -93,6 +94,8 @@ public abstract class DAO<T> {
         } catch (HibernateException e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
+        } finally {
+            session.close();
         }
         return null;
     }
@@ -104,10 +107,11 @@ public abstract class DAO<T> {
             tx = session.beginTransaction();
             session.saveOrUpdate(entity);
             tx.commit();
-            session.close();
         } catch (HibernateException e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
+        } finally {
+            session.close();
         }
         return entity;
     }
@@ -119,10 +123,11 @@ public abstract class DAO<T> {
             tx = session.beginTransaction();
             session.update(entity);
             tx.commit();
-            session.close();
         } catch (HibernateException e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
+        } finally {
+            session.close();
         }
         return entity;
     }
@@ -132,12 +137,14 @@ public abstract class DAO<T> {
         try {
             session = factory.openSession();
             tx = session.beginTransaction();
-            session.delete(entity);
+            session.delete(session.get(clazz, ((Entity) entity).getId()));
             tx.commit();
             session.close();
         } catch (HibernateException e) {
             if (tx != null) tx.rollback();
             e.printStackTrace();
+        } finally {
+            session.close();
         }
     }
 

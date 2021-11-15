@@ -7,6 +7,8 @@ import com.data.shifts.*;
 import javax.persistence.*;
 import java.util.Objects;
 
+import static com.app.WorkSchedule.scheduleLineDAO;
+
 @Entity
 @Table(name = "schedule")
 public class ScheduleLine extends com.data.Entity {
@@ -26,7 +28,7 @@ public class ScheduleLine extends com.data.Entity {
     @Column(name = "base_shift")
     private String baseShift;
 
-    @Column(name = "start_offset")
+    @Column(name = "shift_start_offset")
     private int startOffset; // minutes
 
     @Column(name = "shift_extension")
@@ -40,6 +42,7 @@ public class ScheduleLine extends com.data.Entity {
         this.baseShift = shift.getBaseShift().toString();
         this.startOffset = (int) shift.getStartOffset().toMinutes();
         this.shiftExtension = (int) shift.getShiftExtension().toMinutes();
+        this.id = scheduleLineDAO.findId(this);
     }
 
     public Integer getId() {
@@ -55,9 +58,10 @@ public class ScheduleLine extends com.data.Entity {
     }
 
     public void setDay(Day day) {
-        // this.day.removeScheduleLine(this);
+        if (this.day != null)
+            this.day.removeScheduleLine(this);
         this.day = day;
-        // day.addScheduleLine(this);
+        this.day.addScheduleLine(this);
     }
 
     public Employee getEmployee() {
@@ -65,9 +69,10 @@ public class ScheduleLine extends com.data.Entity {
     }
 
     public void setEmployee(Employee employee) {
-        // this.employee.removeScheduleLine(this);
+        if (this.employee != null)
+            this.employee.removeScheduleLine(this);
         this.employee = employee;
-        // employee.addScheduleLine(this);
+        this.employee.addScheduleLine(this);
     }
 
     public String getBaseShift() {
@@ -99,11 +104,11 @@ public class ScheduleLine extends com.data.Entity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ScheduleLine that = (ScheduleLine) o;
-        return getDay().equals(that.getDay()) && getEmployee().equals(that.getEmployee());
+        return Objects.equals(getId(), that.getId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getDay(), getEmployee());
+        return Objects.hash(getId());
     }
 }

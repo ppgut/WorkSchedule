@@ -1,10 +1,13 @@
 package com.data.employees;
 
-import com.data.schedule.*;
-import org.hibernate.annotations.NaturalId;
+import com.data.schedule.ScheduleLine;
 
 import javax.persistence.*;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+
+import static com.app.WorkSchedule.employeeDAO;
 
 @Entity
 @Table(name = "employee")
@@ -35,22 +38,22 @@ public class Employee extends com.data.Entity {
     @Column(name = "position", length = 50)
     private String position;
 
-    // @OneToMany(mappedBy = "employee")
-    // private Set<ScheduleLine> scheduleLines = new HashSet<>();
+    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
+    private Set<ScheduleLine> scheduleLines = new HashSet<>();
 
     public Employee() {}
 
     public Employee(String firstName, String lastName) {
-        // this.id = ++lastEmployeeId;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.id = employeeDAO.findId(this);
     }
 
     public Employee(String firstName, String lastName, PositionInCompany position) {
-        // this.id = ++lastEmployeeId;
         this.firstName = firstName;
         this.lastName = lastName;
         this.position = position.toString();
+        this.id = employeeDAO.findId(this);
     }
 
     public String getPosition() {
@@ -101,21 +104,22 @@ public class Employee extends com.data.Entity {
         this.id = id;
     }
 
-    // public Set<ScheduleLine> getScheduleLines() {
-    //     return this.scheduleLines;
-    // }
-    //
-    // public void setScheduleLines(Set<ScheduleLine> scheduleLines) {
-    //     this.scheduleLines = scheduleLines;
-    // }
-    //
-    // public void addScheduleLine(ScheduleLine scheduleLine) {
-    //     this.scheduleLines.add(scheduleLine);
-    // }
-    //
-    // public void removeScheduleLine(ScheduleLine scheduleLine) {
-    //     this.scheduleLines.remove(scheduleLine);
-    // }
+    public Set<ScheduleLine> getScheduleLines() {
+        return this.scheduleLines;
+    }
+
+    public void setScheduleLines(Set<ScheduleLine> scheduleLines) {
+        this.scheduleLines = scheduleLines;
+    }
+
+    public void addScheduleLine(ScheduleLine scheduleLine) {
+        this.scheduleLines.add(scheduleLine);
+    }
+
+    public void removeScheduleLine(ScheduleLine scheduleLine) {
+        if (this.scheduleLines != null)
+            this.scheduleLines.remove(scheduleLine);
+    }
 
     @Override
     public String toString() {
@@ -128,12 +132,11 @@ public class Employee extends com.data.Entity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Employee employee = (Employee) o;
-        System.out.println("equals: " + (firstName.equals(employee.firstName) && lastName.equals(employee.lastName)));
-        return firstName.equals(employee.firstName) && lastName.equals(employee.lastName);
+        return Objects.equals(getId(), employee.getId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(firstName, lastName);
+        return Objects.hash(getId());
     }
 }

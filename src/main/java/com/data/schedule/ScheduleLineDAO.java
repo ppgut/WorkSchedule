@@ -2,17 +2,10 @@ package com.data.schedule;
 
 
 import com.data.DAO;
-import com.data.employees.Employee;
-import org.hibernate.HibernateException;
-import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.Transaction;
-import org.hibernate.query.Query;
 
-import javax.persistence.criteria.CriteriaBuilder;
-import javax.persistence.criteria.CriteriaQuery;
-import javax.persistence.criteria.Predicate;
-import javax.persistence.criteria.Root;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ScheduleLineDAO extends DAO<ScheduleLine> {
 
@@ -21,4 +14,11 @@ public class ScheduleLineDAO extends DAO<ScheduleLine> {
         setClazz(ScheduleLine.class);
     }
 
+    @Override
+    public Integer findId(ScheduleLine entity) {
+        Map<String, Object> parametersToCompare = new HashMap<>();
+        parametersToCompare.put(ScheduleLine_.DAY, entity.getDay().getId());
+        parametersToCompare.put(ScheduleLine_.EMPLOYEE, entity.getEmployee().getId());
+        return super.findIdByProperties(entity, parametersToCompare);
+    }
 }

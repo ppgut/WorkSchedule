@@ -7,6 +7,8 @@ import javax.persistence.*;
 import java.time.LocalDate;
 import java.util.*;
 
+import static com.app.WorkSchedule.dayDAO;
+
 @Table(name = "day")
 @Entity
 public class Day extends com.data.Entity {
@@ -37,8 +39,8 @@ public class Day extends com.data.Entity {
     @Column(name = "is_holiday")
     private Boolean isHoliday;
 
-    // @OneToMany(mappedBy = "day")
-    // private Set<ScheduleLine> scheduleLines = new HashSet<>();
+    @OneToMany(mappedBy = "day", cascade = CascadeType.ALL)
+    private Set<ScheduleLine> scheduleLines = new HashSet<>();
 
     public Day() {}
 
@@ -52,6 +54,21 @@ public class Day extends com.data.Entity {
 
         // TODO prepare list of holidays in database and check fullDate vs this list
         this.isHoliday = false;
+        this.id = dayDAO.findId(this);
+    }
+
+    public Day(String dateStr) {
+        LocalDate date = LocalDate.parse(dateStr);
+        this.fulldate = date.toString();
+        this.year = date.getYear();
+        this.month = date.getMonthValue();
+        this.dayOfMonth = date.getDayOfMonth();
+        this.dayOfWeek = date.getDayOfWeek().getValue();
+        this.isWeekend = this.dayOfWeek > 5;
+
+        // TODO prepare list of holidays in database and check fullDate vs this list
+        this.isHoliday = false;
+        this.id = dayDAO.findId(this);
     }
 
     public Boolean getIsHoliday() {
@@ -118,21 +135,22 @@ public class Day extends com.data.Entity {
         this.id = id;
     }
 
-    // public Set<ScheduleLine> getScheduleLines() {
-    //     return this.scheduleLines;
-    // }
-    //
-    // public void setScheduleLines(Set<ScheduleLine> scheduleLines) {
-    //     this.scheduleLines = scheduleLines;
-    // }
-    //
-    // public void addScheduleLine(ScheduleLine scheduleLine) {
-    //     this.scheduleLines.add(scheduleLine);
-    // }
-    //
-    // public void removeScheduleLine(ScheduleLine scheduleLine) {
-    //     this.scheduleLines.remove(scheduleLine);
-    // }
+    public Set<ScheduleLine> getScheduleLines() {
+        return this.scheduleLines;
+    }
+
+    public void setScheduleLines(Set<ScheduleLine> scheduleLines) {
+        this.scheduleLines = scheduleLines;
+    }
+
+    public void addScheduleLine(ScheduleLine scheduleLine) {
+        this.scheduleLines.add(scheduleLine);
+    }
+
+    public void removeScheduleLine(ScheduleLine scheduleLine) {
+        if (this.scheduleLines != null)
+            this.scheduleLines.remove(scheduleLine);
+    }
 
     @Override
     public String toString() {
@@ -144,11 +162,11 @@ public class Day extends com.data.Entity {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Day day = (Day) o;
-        return fulldate.equals(day.fulldate);
+        return Objects.equals(getId(), day.getId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(fulldate);
+        return Objects.hash(getId());
     }
 }
